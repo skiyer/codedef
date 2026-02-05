@@ -1,6 +1,6 @@
 [package]
 name = "codedef"
-version = "0.2.0"
+version = "2026.2.5"
 edition = "2021"
 authors = ["skiyer"]
 description = "Extract code definitions (function, struct, class, etc.) from source files using tree-sitter"
