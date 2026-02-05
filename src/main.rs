@@ -343,7 +343,7 @@ fn extract_typedef_signature(node: &Node, source_code: &str) -> String {
         .child_by_field_name("type")
         .map(|type_node| match type_node.kind() {
             "struct_specifier" | "union_specifier" | "enum_specifier" => {
-                extract_c_signature(&type_node, source_code)
+                format_compound_typedef_signature(&type_node, source_code)
             }
             _ => compact_whitespace(&get_node_text(&type_node, source_code)),
         })
@@ -370,6 +370,32 @@ fn extract_typedef_signature(node: &Node, source_code: &str) -> String {
         (false, true) => format!("typedef {type_sig}"),
         (true, false) => format!("typedef {}", declarators.join(", ")),
         (true, true) => get_first_line(node, source_code),
+    }
+}
+
+fn format_compound_typedef_signature(node: &Node, source_code: &str) -> String {
+    let keyword = match node.kind() {
+        "struct_specifier" => "struct",
+        "union_specifier" => "union",
+        "enum_specifier" => "enum",
+        _ => "",
+    };
+    let name = node
+        .child_by_field_name("name")
+        .map(|name_node| compact_whitespace(&get_node_text(&name_node, source_code)))
+        .unwrap_or_default();
+    let has_body = has_body(node, Lang::C);
+
+    if has_body {
+        if name.is_empty() {
+            format!("{keyword} {{ ... }}")
+        } else {
+            format!("{keyword} {name} {{ ... }}")
+        }
+    } else if name.is_empty() {
+        keyword.to_string()
+    } else {
+        format!("{keyword} {name}")
     }
 }
 
@@ -715,6 +741,24 @@ typedef int Foo, *FooPtr;
         assert!(entries[1].signature.contains("Foo"));
         assert!(entries[1].signature.contains("FooPtr"));
         assert!(entries[1].signature.contains(','));
+    }
+
+    #[test]
+    fn test_outline_typedef_struct_body() {
+        let content = r"
+typedef struct A {
+    int value;
+} B;
+
+typedef struct {
+    int other;
+} C;
+";
+        let file = create_temp_file(content, ".c");
+        let entries = list_outline(file.path(), Lang::C).unwrap();
+        assert_eq!(entries.len(), 2);
+        assert_eq!(entries[0].signature, "typedef struct A { ... } B");
+        assert_eq!(entries[1].signature, "typedef struct { ... } C");
     }
 
     #[test]
