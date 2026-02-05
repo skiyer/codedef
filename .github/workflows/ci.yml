@@ -67,4 +67,5 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - run: cargo update --locked
+      - run: cargo update
+      - run: git diff --exit-code Cargo.lock
