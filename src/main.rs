@@ -698,6 +698,26 @@ int calculate_area(Rectangle* r) {
     }
 
     #[test]
+    fn test_outline_typedef_signature_simple() {
+        let content = r"
+typedef unsigned long size_t;
+typedef int Foo, *FooPtr;
+";
+        let file = create_temp_file(content, ".c");
+        let entries = list_outline(file.path(), Lang::C).unwrap();
+        assert_eq!(entries.len(), 2);
+        assert!(entries
+            .iter()
+            .all(|entry| entry.def_type == "type_definition"));
+
+        assert_eq!(entries[0].signature, "typedef unsigned long size_t");
+        assert!(entries[1].signature.starts_with("typedef int"));
+        assert!(entries[1].signature.contains("Foo"));
+        assert!(entries[1].signature.contains("FooPtr"));
+        assert!(entries[1].signature.contains(','));
+    }
+
+    #[test]
     fn test_format_def_type() {
         assert_eq!(format_def_type("function_definition"), "fn");
         assert_eq!(format_def_type("struct_specifier"), "struct");
