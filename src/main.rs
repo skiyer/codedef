@@ -304,30 +304,17 @@ fn extract_c_signature(node: &Node, source_code: &str) -> String {
         "function_definition" => {
             // Extract declarator (function name and parameters)
             if let Some(declarator) = node.child_by_field_name("declarator") {
-                let sig = get_node_text(&declarator, source_code);
+                let sig = compact_whitespace(&get_node_text(&declarator, source_code));
                 // Also get return type
                 if let Some(type_node) = node.child_by_field_name("type") {
-                    let ret_type = get_node_text(&type_node, source_code);
+                    let ret_type = compact_whitespace(&get_node_text(&type_node, source_code));
                     return format!("{ret_type} {sig}");
                 }
                 return sig;
             }
             get_first_line(node, source_code)
         }
-        "type_definition" => {
-            // For typedef, get the whole first line or the type name
-            let text = get_node_text(node, source_code);
-            // Try to extract a cleaner representation
-            if let Some(first_line) = text.lines().next() {
-                let trimmed = first_line.trim();
-                if trimmed.len() <= 80 {
-                    return trimmed.to_string();
-                }
-                // Truncate long lines
-                return format!("{}...", &trimmed[..77]);
-            }
-            text
-        }
+        "type_definition" => extract_typedef_signature(node, source_code),
         "struct_specifier" | "union_specifier" | "enum_specifier" => {
             // Get the keyword and name
             let keyword = match node_type {
@@ -337,7 +324,7 @@ fn extract_c_signature(node: &Node, source_code: &str) -> String {
                 _ => "",
             };
             if let Some(name_node) = node.child_by_field_name("name") {
-                let name = get_node_text(&name_node, source_code);
+                let name = compact_whitespace(&get_node_text(&name_node, source_code));
                 return format!("{keyword} {name}");
             }
             format!("{keyword} {{...}}")
@@ -348,6 +335,47 @@ fn extract_c_signature(node: &Node, source_code: &str) -> String {
         }
         _ => get_first_line(node, source_code),
     }
+}
+
+/// Extract a concise typedef signature
+fn extract_typedef_signature(node: &Node, source_code: &str) -> String {
+    let type_sig = node
+        .child_by_field_name("type")
+        .map(|type_node| match type_node.kind() {
+            "struct_specifier" | "union_specifier" | "enum_specifier" => {
+                extract_c_signature(&type_node, source_code)
+            }
+            _ => compact_whitespace(&get_node_text(&type_node, source_code)),
+        })
+        .unwrap_or_default();
+
+    let mut declarators = Vec::new();
+    let child_count = node.child_count();
+    for i in 0..child_count {
+        let Ok(index) = u32::try_from(i) else {
+            continue;
+        };
+        if node.field_name_for_child(index) == Some("declarator") {
+            if let Some(child) = node.child(i) {
+                let text = compact_whitespace(&get_node_text(&child, source_code));
+                if !text.is_empty() {
+                    declarators.push(text);
+                }
+            }
+        }
+    }
+
+    match (type_sig.is_empty(), declarators.is_empty()) {
+        (false, false) => format!("typedef {type_sig} {}", declarators.join(", ")),
+        (false, true) => format!("typedef {type_sig}"),
+        (true, false) => format!("typedef {}", declarators.join(", ")),
+        (true, true) => get_first_line(node, source_code),
+    }
+}
+
+/// Collapse consecutive whitespace into single spaces
+fn compact_whitespace(text: &str) -> String {
+    text.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
 /// Get text content of a node
@@ -660,6 +688,13 @@ int calculate_area(Rectangle* r) {
         let file = create_temp_file(content, ".c");
         let entries = list_outline(file.path(), Lang::C).unwrap();
         assert_eq!(entries.len(), 4); // macro, struct, typedef, function
+
+        let typedef_entry = entries
+            .iter()
+            .find(|entry| entry.def_type == "type_definition")
+            .expect("typedef entry");
+        assert!(typedef_entry.signature.starts_with("typedef"));
+        assert!(typedef_entry.signature.contains("Rectangle"));
     }
 
     #[test]
