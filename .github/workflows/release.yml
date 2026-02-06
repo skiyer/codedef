@@ -74,7 +74,7 @@ jobs:
         if: matrix.os != 'windows-latest'
         run: |
           cd target/${{ matrix.target }}/release
-          tar czvf ../../../codedef-${{ matrix.target }}.tar.gz codedef
+          tar czvf ../../../code-outline-${{ matrix.target }}.tar.gz code-outline
           cd ../../..
 
       - name: Create archive (Windows)
@@ -82,14 +82,14 @@ jobs:
         shell: pwsh
         run: |
           cd target/${{ matrix.target }}/release
-          Compress-Archive -Path codedef.exe -DestinationPath ../../../codedef-${{ matrix.target }}.zip
+          Compress-Archive -Path code-outline.exe -DestinationPath ../../../code-outline-${{ matrix.target }}.zip
           cd ../../..
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: codedef-${{ matrix.target }}
-          path: codedef-${{ matrix.target }}.${{ matrix.archive }}
+          name: code-outline-${{ matrix.target }}
+          path: code-outline-${{ matrix.target }}.${{ matrix.archive }}
 
   release:
     name: Create Release
@@ -111,7 +111,7 @@ jobs:
         run: |
           cd artifacts
           find . -type f \( -name "*.tar.gz" -o -name "*.zip" \) -exec mv {} . \;
-          rm -rf codedef-*/
+          rm -rf code-outline-*/
           sha256sum * > checksums-sha256.txt
           cat checksums-sha256.txt
 
