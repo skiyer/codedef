@@ -14,6 +14,7 @@ More languages coming soon: C++, Rust, Go, Python, JavaScript/TypeScript, Java..
 
 - Parse source code using tree-sitter for accurate AST-based extraction
 - Find the innermost enclosing definition for a given line number
+- List all definitions in a file (outline view with line numbers)
 - Auto-detect language from file extension
 - Single static binary with no runtime dependencies
 
@@ -34,8 +35,12 @@ cargo build --release
 
 ## Usage
 
+codedef 提供两个子命令：`find` 和 `outline`。
+
+### Find - 查找指定行的定义
+
 ```bash
-codedef <FILE_PATH> <LINE_NUMBER> [OPTIONS]
+codedef find <FILE_PATH> <LINE_NUMBER> [OPTIONS]
 
 Arguments:
   <FILE_PATH>    Path to the source file
@@ -48,17 +53,43 @@ Options:
   -V, --version      Print version
 ```
 
-### Examples
+#### Examples
 
 ```bash
 # Find the function containing line 42 (auto-detect language)
-codedef src/main.c 42
+codedef find src/main.c 42
 
 # Explicitly specify language
-codedef src/main.c 42 --lang c
+codedef find src/main.c 42 --lang c
 
 # Show definition type
-codedef src/main.c 42 --show-type
+codedef find src/main.c 42 --show-type
+```
+
+### Outline - 列出文件所有定义
+
+```bash
+codedef outline <FILE_PATH> [OPTIONS]
+
+Arguments:
+  <FILE_PATH>    Path to the source file
+
+Options:
+  -l, --lang <LANG>  Programming language [possible values: c]
+  -h, --help         Print help
+```
+
+#### Examples
+
+```bash
+# List all definitions in a file
+codedef outline src/main.c
+
+# Output format:
+#  3: [macro  ] #define MAX_SIZE 100
+#  6: [struct ] struct Point
+# 11: [typedef] typedef struct { ... } Rectangle
+# 22: [fn     ] int add(int a, int b)
 ```
 
 ## Docker
@@ -67,7 +98,8 @@ Build a minimal Docker image:
 
 ```bash
 docker build -t codedef .
-docker run --rm -v $(pwd):/src codedef /src/test.c 10
+docker run --rm -v $(pwd):/src codedef find /src/test.c 10
+docker run --rm -v $(pwd):/src codedef outline /src/test.c
 ```
 
 ## Adding New Languages
