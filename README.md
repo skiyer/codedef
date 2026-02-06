@@ -1,4 +1,4 @@
-# codedef
+# code-outline
 
 Extract code definitions (function, struct, class, enum, etc.) from source files using tree-sitter.
 
@@ -30,17 +30,17 @@ cargo install --path .
 
 ```bash
 cargo build --release
-# Binary at: target/release/codedef
+# Binary at: target/release/code-outline
 ```
 
 ## Usage
 
-codedef 提供两个子命令：`find` 和 `outline`。
+code-outline 提供两个子命令：`at` 和 `all`。
 
-### Find - 查找指定行的定义
+### At - 查找指定行的定义
 
 ```bash
-codedef find <FILE_PATH> <LINE_NUMBER> [OPTIONS]
+code-outline at <FILE_PATH> <LINE_NUMBER> [OPTIONS]
 
 Arguments:
   <FILE_PATH>    Path to the source file
@@ -57,19 +57,19 @@ Options:
 
 ```bash
 # Find the function containing line 42 (auto-detect language)
-codedef find src/main.c 42
+code-outline at src/main.c 42
 
 # Explicitly specify language
-codedef find src/main.c 42 --lang c
+code-outline at src/main.c 42 --lang c
 
 # Show definition type
-codedef find src/main.c 42 --show-type
+code-outline at src/main.c 42 --show-type
 ```
 
-### Outline - 列出文件所有定义
+### All - 列出文件所有定义
 
 ```bash
-codedef outline <FILE_PATH> [OPTIONS]
+code-outline all <FILE_PATH> [OPTIONS]
 
 Arguments:
   <FILE_PATH>    Path to the source file
@@ -83,7 +83,7 @@ Options:
 
 ```bash
 # List all definitions in a file
-codedef outline src/main.c
+code-outline all src/main.c
 
 # Output format:
 #  3: [macro  ] #define MAX_SIZE 100
@@ -97,9 +97,9 @@ codedef outline src/main.c
 Build a minimal Docker image:
 
 ```bash
-docker build -t codedef .
-docker run --rm -v $(pwd):/src codedef find /src/test.c 10
-docker run --rm -v $(pwd):/src codedef outline /src/test.c
+docker build -t code-outline .
+docker run --rm -v $(pwd):/src code-outline at /src/test.c 10
+docker run --rm -v $(pwd):/src code-outline all /src/test.c
 ```
 
 ## Adding New Languages

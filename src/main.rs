@@ -69,7 +69,7 @@ impl Lang {
 
 /// Command line arguments
 #[derive(Parser, Debug)]
-#[command(name = "codedef")]
+#[command(name = "code-outline")]
 #[command(author, version, about = "Extract code definitions from source files using tree-sitter", long_about = None)]
 struct Cli {
     #[command(subcommand)]
@@ -79,7 +79,7 @@ struct Cli {
 #[derive(Subcommand, Debug)]
 enum Commands {
     /// Find the innermost enclosing definition for a given line number
-    Find {
+    At {
         /// Path to the source file
         file_path: PathBuf,
 
@@ -96,7 +96,7 @@ enum Commands {
     },
 
     /// List all definitions in a file (outline)
-    Outline {
+    All {
         /// Path to the source file
         file_path: PathBuf,
 
@@ -534,7 +534,7 @@ fn main() -> Result<()> {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::Find {
+        Commands::At {
             file_path,
             line_number,
             lang,
@@ -559,7 +559,7 @@ fn main() -> Result<()> {
             }
         }
 
-        Commands::Outline { file_path, lang } => {
+        Commands::All { file_path, lang } => {
             validate_file(&file_path)?;
             let lang = detect_lang(&file_path, lang);
 
